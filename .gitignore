@@ -1,0 +1,20 @@
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Model Weights (Too large for GitHub)
+*.pt
+best.pt
+yolov8l.pt
+
+# Python Caches
+__pycache__/
+*.pyc
+
+# Local Media / Outputs
+scan_result.jpg
+crowd.mp4
+test_image.jpg
