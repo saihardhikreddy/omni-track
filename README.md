@@ -34,10 +34,51 @@ Follow these instructions to deploy Omni-Track on your local machine.
 ### Prerequisites
 * **Python 3.9+** installed on your system.
 * **Git** installed on your system.
-* (Optional but highly recommended) An **NVIDIA GPU** for real-time live feed processing.
+* (Optional) An **NVIDIA GPU** with CUDA for real-time live feed processing.
 
 ### 1. Clone the Repository
 Open your terminal and download the code:
 ```bash
-git clone [https://github.com/your-username/omni-track.git](https://github.com/your-username/omni-track.git)
+git clone https://github.com/saihardhikreddy/omni-track.git
 cd omni-track
+```
+
+### 2. Create and Activate Virtual Environment
+```bash
+# On Linux/macOS:
+python3 -m venv venv
+source venv/bin/activate
+
+# On Windows:
+python -m venv venv
+.\venv\Scripts\activate
+```
+
+### 3. Install Dependencies & Pretrained Weights
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+*Note: Ultralytics automatically downloads standard YOLOv8 weights (`yolov8n.pt` / `yolov8l.pt`) on first run.*
+
+---
+
+## ⚡ Running Omni-Track
+
+### 1. Run Live Stream Anomaly Detector (`app.py`)
+Launch live webcam processing with SVD crowd topography overlays:
+```bash
+python app.py
+```
+
+### 2. Run Static High-Resolution SAHI Analysis (`stadium_elite.py`)
+Run sliced hyper-inference on high-density crowd photos:
+```bash
+python stadium_elite.py --image stadium_crowd.jpg --model yolov8l.pt --device cpu
+```
+
+### 3. Hardware Camera Diagnostic Tool (`test_cam.py`)
+Test connected video feeds and camera indices:
+```bash
+python test_cam.py --camera 0
+```
