@@ -1,45 +1,61 @@
+import argparse
+from pathlib import Path
 import cv2
 from sahi import AutoDetectionModel
 from sahi.predict import get_sliced_prediction
 
-print("Loading YOLO11 Large model...")
-# 1. Initialize the Detection Model
-detection_model = AutoDetectionModel.from_pretrained(
-    model_type='yolov8', 
-    model_path='yolo11l.pt',
-    confidence_threshold=0.15, # Lower threshold to catch the dense crowd in the back
-    device='cpu', # Change to 'cuda:0' if you have an NVIDIA GPU
-)
+def parse_args():
+    parser = argparse.ArgumentParser(description="Omni-Track Slicing Aided Hyper Inference (SAHI) Static Crowd Analysis")
+    parser.add_argument("--image", "-i", default="stadium_crowd.jpg", help="Path to input high-resolution crowd image")
+    parser.add_argument("--model", "-m", default="yolov8l.pt", help="YOLO model weights path or name (e.g. yolov8l.pt, yolo11l.pt)")
+    parser.add_argument("--device", "-d", default="cpu", help="Device to run inference on ('cpu' or 'cuda:0')")
+    parser.add_argument("--conf", type=float, default=0.15, help="Confidence threshold (default: 0.15)")
+    parser.add_argument("--slice-size", type=int, default=400, help="SAHI slice grid size in pixels (default: 400)")
+    parser.add_argument("--out-dir", default=".", help="Output directory for visual report export")
+    return parser.parse_args()
 
-print("Slicing image and running inference... (This may take a minute)")
-# 2. Perform Sliced Inference ("The Magnifying Glass")
-result = get_sliced_prediction(
-    image="stadium_crowd.jpg",
-    detection_model=detection_model,
-    slice_height=400,             # Smaller slices = tighter zoom on tiny heads
-    slice_width=400,
-    overlap_height_ratio=0.25,    # 25% overlap ensures no one is missed on the edges
-    overlap_width_ratio=0.25,
-    perform_standard_pred=False   # Skip full-image prediction to avoid "cell phone" confusion
-)
+def main():
+    args = parse_args()
+    image_path = Path(args.image)
 
-# 3. Filter Results (Keep ONLY People)
-full_predictions = result.object_prediction_list
+    print(f"Loading object detection model ({args.model})...")
+    detection_model = AutoDetectionModel.from_pretrained(
+        model_type='yolov8', 
+        model_path=args.model,
+        confidence_threshold=args.conf,
+        device=args.device,
+    )
 
-# In the COCO dataset, we only care about the 'person' category
-only_people = [p for p in full_predictions if p.category.name == 'person']
+    if not image_path.is_file():
+        print(f"[!] Warning: Image file '{image_path}' not found. Please specify a valid image path with --image.")
+        return
 
-# We overwrite the original list so the final image ONLY draws boxes around people
-result.object_prediction_list = only_people
+    print(f"Slicing image '{image_path}' and running SAHI inference...")
+    result = get_sliced_prediction(
+        image=str(image_path),
+        detection_model=detection_model,
+        slice_height=args.slice_size,
+        slice_width=args.slice_size,
+        overlap_height_ratio=0.25,
+        overlap_width_ratio=0.25,
+        perform_standard_pred=False
+    )
 
-# 4. Terminal Analytics Report
-print("\n" + "="*40)
-print("📊 FINAL ELITE STADIUM REPORT")
-print("="*40)
-print(f"Total Objects Found  : {len(full_predictions)}")
-print(f"Confirmed People     : {len(only_people)}")
-print("="*40 + "\n")
+    full_predictions = result.object_prediction_list
+    only_people = [p for p in full_predictions if p.category.name == 'person']
+    result.object_prediction_list = only_people
 
-# 5. Save Visualization
-result.export_visuals(export_dir=".", file_name="elite_prediction_final")
-print("Success! Check your folder for 'elite_prediction_final.png'.")
+    print("\n" + "="*40)
+    print("📊 FINAL ELITE STADIUM REPORT")
+    print("="*40)
+    print(f"Total Objects Found  : {len(full_predictions)}")
+    print(f"Confirmed People     : {len(only_people)}")
+    print("="*40 + "\n")
+
+    out_dir = Path(args.out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    result.export_visuals(export_dir=str(out_dir), file_name="elite_prediction_final")
+    print(f"Success! Check '{out_dir}' for 'elite_prediction_final.png'.")
+
+if __name__ == "__main__":
+    main()
