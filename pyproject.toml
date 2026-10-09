@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "omni-track"
+version = "12.0.0"
+description = "Real-Time Crowd Topography, SVD Anomaly Detection, and Fully-Connected Mesh Analysis"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [
+    { name = "Sai Hardhik Reddy", email = "saihardhikreddy@gmail.com" }
+]
+dependencies = [
+    "ultralytics>=8.1.0",
+    "sahi>=0.11.15",
+    "numpy>=1.23.0",
+    "opencv-python>=4.8.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "ruff>=0.1.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"

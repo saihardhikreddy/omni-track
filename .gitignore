@@ -13,8 +13,21 @@ yolov8l.pt
 # Python Caches
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 
-# Local Media / Outputs
+# Local Media & Run Outputs
 scan_result.jpg
 crowd.mp4
 test_image.jpg
+runs/
+output/
+*.avi
+
+# IDEs & OS Files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
