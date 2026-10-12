@@ -2,6 +2,8 @@ import argparse
 import cv2
 import time
 
+import sys
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Omni-Track Camera Probe Diagnostic Utility")
     parser.add_argument("--camera", "-c", type=int, default=None, help="Explicit camera index to test (e.g. 0, 1, 2)")
@@ -19,6 +21,7 @@ def main():
 
     cap = None
     working_index = -1
+    backend = cv2.CAP_DSHOW if sys.platform.startswith("win") else cv2.CAP_ANY
 
     if args.camera is not None:
         probe_indices = [args.camera]
@@ -29,7 +32,7 @@ def main():
 
     for idx in probe_indices:
         print(f"[*] Probing index {idx}...")
-        temp_cap = cv2.VideoCapture(idx, cv2.CAP_DSHOW)
+        temp_cap = cv2.VideoCapture(idx, backend)
         
         if temp_cap.isOpened():
             ret, frame = temp_cap.read()
