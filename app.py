@@ -1,3 +1,24 @@
+import sys
+import argparse
+
+VERSION = "12.0.0"
+
+def parse_cli():
+    parser = argparse.ArgumentParser(
+        prog="omni-track",
+        description="OMNI-TRACK (SVD Topography + K_n Network Graph) v12.0 - High-density crowd monitoring system",
+    )
+    parser.add_argument(
+        "--version", "-v",
+        action="version",
+        version=f"%(prog)s {VERSION}",
+        help="Show program version and exit",
+    )
+    return parser.parse_known_args()
+
+if __name__ == "__main__":
+    parse_cli()
+
 import cv2
 import numpy as np
 import threading
