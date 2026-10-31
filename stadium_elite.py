@@ -8,8 +8,6 @@ inference across slices to capture micro-scale human targets, and merges predict
 import argparse
 from pathlib import Path
 import sys
-from typing import List
-import cv2
 from sahi import AutoDetectionModel
 from sahi.predict import get_sliced_prediction
 

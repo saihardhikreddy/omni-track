@@ -1,4 +1,3 @@
-import sys
 import argparse
 
 VERSION = "12.0.0"
@@ -23,7 +22,6 @@ import cv2
 import numpy as np
 import threading
 import time
-import math
 import itertools
 from ultralytics import YOLO
 from sahi import AutoDetectionModel
