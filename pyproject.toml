@@ -19,6 +19,9 @@ dependencies = [
     "opencv-python>=4.8.0",
 ]
 
+[project.scripts]
+omni-probe = "test_cam:main"
+
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0",
