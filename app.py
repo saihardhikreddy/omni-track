@@ -18,6 +18,8 @@ def parse_cli():
 if __name__ == "__main__":
     parse_cli()
 
+import sys
+
 import cv2
 import numpy as np
 import threading
@@ -60,7 +62,7 @@ try:
     print("[SUCCESS] Both AI Brains Loaded onto NVIDIA GPU.\n")
 except Exception as e:
     print(f"[ERROR] Failed to load models. {e}")
-    exit()
+    sys.exit(1)
 
 # ==========================================
 # 📸 MODE 1: STATIC IMAGE (SAHI + DISK SAVE)
@@ -185,7 +187,9 @@ def live_camera():
 
     while True:
         ret, frame = cap.read()
-        if not ret: break
+        if not ret:
+            print("[WARNING] Camera stopped sending frames.")
+            break
         
         frame = cv2.flip(frame, 1) 
         latest_frame = frame.copy() 
@@ -260,6 +264,8 @@ def live_camera():
             is_running = False
             break
 
+    is_running = False  # also stop the AI thread when the camera drops out
+    latest_frame = None  # don't re-track a stale frame on the next run
     cap.release()
     cv2.destroyAllWindows()
     ai_thread.join(timeout=1.0)
