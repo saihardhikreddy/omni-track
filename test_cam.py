@@ -11,6 +11,7 @@ def parse_args():
     return parser.parse_args()
 
 def main():
+    """Probe the cameras and show a live feed. Returns 0 on success, 1 if no camera works."""
     args = parse_args()
     print("""
 =========================================================
@@ -46,7 +47,7 @@ def main():
 
     if not cap or not cap.isOpened():
         print("[ERROR] ❌ No working camera stream detected.")
-        return
+        return 1
 
     print(f"[SYSTEM] Requesting resolution: {args.width}x{args.height}...")
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, args.width)
@@ -72,6 +73,7 @@ def main():
 
     cap.release()
     cv2.destroyAllWindows()
+    return 0
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
