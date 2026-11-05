@@ -30,4 +30,7 @@ output/
 *.swp
 *.swo
 .DS_Store
-Thumbs.db
+Thumbs.db
+# Tool caches
+.pytest_cache/
+.ruff_cache/
