@@ -45,11 +45,23 @@ def print_banner():
 
 print_banner()
 
-# --- 1. LOAD DUAL AI MODELS (GPU ACCELERATED) ---
+# --- 1. LOAD DUAL AI MODELS (GPU WHEN AVAILABLE) ---
+def pick_device() -> str:
+    """Use the NVIDIA GPU when there is one, otherwise run on the CPU (slower)."""
+    try:
+        import torch
+        return "cuda:0" if torch.cuda.is_available() else "cpu"
+    except ImportError:
+        return "cpu"
+
+DEVICE = pick_device()
+if DEVICE == "cpu":
+    print("[WARNING] No CUDA GPU found, running on the CPU. Live tracking will be slow.")
+
 try:
     print("[SYSTEM] Loading Engine A (YOLO-Large + ByteTrack) for Live Camera...")
     fast_model = YOLO('yolov8l.pt') 
-    fast_model.to('cuda')           
+    fast_model.to(DEVICE)
 
     print("[SYSTEM] Loading Engine B (SAHI-YOLO) for Static Images...")
     sahi_model = AutoDetectionModel.from_pretrained(
@@ -57,9 +69,9 @@ try:
         model_path='best.pt',         
         confidence_threshold=0.15,    
         image_size=1024,              
-        device='cuda:0',              
+        device=DEVICE,
     )
-    print("[SUCCESS] Both AI Brains Loaded onto NVIDIA GPU.\n")
+    print(f"[SUCCESS] Both AI Brains Loaded on {DEVICE}.\n")
 except Exception as e:
     print(f"[ERROR] Failed to load models. {e}")
     sys.exit(1)

@@ -61,6 +61,8 @@ pip install -r requirements.txt
 ```
 *Note: Ultralytics automatically downloads standard YOLOv8 weights (`yolov8n.pt` / `yolov8l.pt`) on first run.*
 
+*`app.py` also needs your SAHI detection weights saved as `best.pt` in the project folder (the file is gitignored, so it is not in the repo). It uses an NVIDIA GPU when CUDA is available and falls back to the CPU otherwise.*
+
 ---
 
 ## ⚡ Running Omni-Track
