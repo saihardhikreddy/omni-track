@@ -8,20 +8,34 @@ inference across slices to capture micro-scale human targets, and merges predict
 import argparse
 from pathlib import Path
 import sys
-from sahi import AutoDetectionModel
-from sahi.predict import get_sliced_prediction
 
 
-def parse_args() -> argparse.Namespace:
+def fraction(text: str) -> float:
+    """argparse type: a confidence threshold, above 0 and at most 1."""
+    value = float(text)
+    if not 0 < value <= 1:
+        raise argparse.ArgumentTypeError(f"must be between 0 and 1, got {text}")
+    return value
+
+
+def slice_px(text: str) -> int:
+    """argparse type: a slice size in pixels; SAHI can't slice into tiles of 0 or fewer pixels."""
+    value = int(text)
+    if value < 32:
+        raise argparse.ArgumentTypeError(f"must be at least 32 pixels, got {text}")
+    return value
+
+
+def parse_args(argv=None) -> argparse.Namespace:
     """Parse command line arguments for SAHI crowd inference."""
     parser = argparse.ArgumentParser(description="Omni-Track Slicing Aided Hyper Inference (SAHI) Static Crowd Analysis")
     parser.add_argument("--image", "-i", default="stadium_crowd.jpg", help="Path to input high-resolution crowd image")
-    parser.add_argument("--model", "-m", default="yolov8l.pt", help="YOLO model weights path or name (e.g. yolov8l.pt, yolo11l.pt)")
+    parser.add_argument("--model", "-m", default="yolov8l.pt", help="YOLOv8 weights path or name (e.g. yolov8n.pt, yolov8l.pt)")
     parser.add_argument("--device", "-d", default="cpu", help="Device to run inference on ('cpu' or 'cuda:0')")
-    parser.add_argument("--conf", type=float, default=0.15, help="Confidence threshold (default: 0.15)")
-    parser.add_argument("--slice-size", type=int, default=400, help="SAHI slice grid size in pixels (default: 400)")
+    parser.add_argument("--conf", type=fraction, default=0.15, help="Confidence threshold (default: 0.15)")
+    parser.add_argument("--slice-size", type=slice_px, default=400, help="SAHI slice grid size in pixels (default: 400)")
     parser.add_argument("--out-dir", default=".", help="Output directory for visual report export")
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
 def main() -> None:
@@ -32,6 +46,10 @@ def main() -> None:
     if not image_path.is_file():
         print(f"[!] Error: Image file '{image_path}' not found. Please specify a valid image path with --image.")
         sys.exit(1)
+
+    # Imported here so --help and argument errors don't wait for torch to load.
+    from sahi import AutoDetectionModel
+    from sahi.predict import get_sliced_prediction
 
     print(f"Loading object detection model ({args.model}) on {args.device}...")
     detection_model = AutoDetectionModel.from_pretrained(

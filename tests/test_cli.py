@@ -42,3 +42,14 @@ def test_main_fails_when_no_camera_works():
     with patch.object(sys, "argv", ["test_cam.py", "--camera", "7"]), \
             patch.object(test_cam.cv2, "VideoCapture", return_value=_DeadCamera()):
         assert test_cam.main() == 1
+
+
+def test_stadium_args_are_validated():
+    import pytest
+    import stadium_elite
+
+    args = stadium_elite.parse_args(["--conf", "0.3", "--slice-size", "512"])
+    assert (args.conf, args.slice_size) == (0.3, 512)
+    for bad in (["--conf", "0"], ["--conf", "1.5"], ["--slice-size", "0"]):
+        with pytest.raises(SystemExit):
+            stadium_elite.parse_args(bad)
