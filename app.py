@@ -29,6 +29,8 @@ from ultralytics import YOLO
 from sahi import AutoDetectionModel
 from sahi.predict import get_sliced_prediction
 
+from test_cam import camera_backend
+
 def print_banner():
     print("""
     =========================================================
@@ -176,12 +178,14 @@ def live_camera():
     ai_thread.start()
 
     cap = None
-    # Hunts for external/virtual cameras first, falls back to laptop cam
+    # Hunts for external/virtual cameras first, falls back to laptop cam.
+    # DirectShow exists only on Windows, so Linux and macOS use OpenCV's default.
     for idx in [1, 2, 3, 0]:
-        temp_cap = cv2.VideoCapture(idx, cv2.CAP_DSHOW)
+        temp_cap = cv2.VideoCapture(idx, camera_backend())
         if temp_cap.isOpened():
             cap = temp_cap
             break
+        temp_cap.release()
 
     if not cap or not cap.isOpened(): 
         print("[ERROR] No camera found.")

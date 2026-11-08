@@ -3,6 +3,11 @@ import cv2
 
 import sys
 
+def camera_backend(platform=None):
+    """DirectShow on Windows (fast to open); elsewhere let OpenCV pick (V4L2, AVFoundation)."""
+    platform = sys.platform if platform is None else platform
+    return cv2.CAP_DSHOW if platform.startswith("win") else cv2.CAP_ANY
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Omni-Track Camera Probe Diagnostic Utility")
     parser.add_argument("--camera", "-c", type=int, default=None, help="Explicit camera index to test (e.g. 0, 1, 2)")
@@ -21,7 +26,7 @@ def main():
 
     cap = None
     working_index = -1
-    backend = cv2.CAP_DSHOW if sys.platform.startswith("win") else cv2.CAP_ANY
+    backend = camera_backend()
 
     if args.camera is not None:
         probe_indices = [args.camera]

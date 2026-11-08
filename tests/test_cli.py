@@ -53,3 +53,15 @@ def test_stadium_args_are_validated():
     for bad in (["--conf", "0"], ["--conf", "1.5"], ["--slice-size", "0"]):
         with pytest.raises(SystemExit):
             stadium_elite.parse_args(bad)
+
+
+def test_camera_backend_per_platform():
+    assert test_cam.camera_backend("win32") == test_cam.cv2.CAP_DSHOW
+    assert test_cam.camera_backend("linux") == test_cam.cv2.CAP_ANY
+    assert test_cam.camera_backend("darwin") == test_cam.cv2.CAP_ANY
+
+
+def test_app_does_not_hard_code_directshow():
+    # app.py loads GPU models on import, so check its source instead.
+    source = (REPO_ROOT / "app.py").read_text(encoding="utf-8")
+    assert "cv2.CAP_DSHOW" not in source
