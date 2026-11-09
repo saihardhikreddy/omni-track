@@ -21,15 +21,14 @@ if __name__ == "__main__":
 import sys
 
 import cv2
-import numpy as np
 import threading
 import time
-import itertools
 from ultralytics import YOLO
 from sahi import AutoDetectionModel
 from sahi.predict import get_sliced_prediction
 
 from test_cam import camera_backend
+import topography
 
 def print_banner():
     print("""
@@ -197,7 +196,7 @@ def live_camera():
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, cam_h)
 
     # Mathematical Constants
-    grid_cols, grid_rows = 32, 18 
+    grid_cols, grid_rows = topography.GRID_COLS, topography.GRID_ROWS
 
     print("[SYSTEM] 🟢 LIVE TRACKING ACTIVE. Press 'q' on the video window to quit.")
 
@@ -213,53 +212,37 @@ def live_camera():
         
         frame_h, frame_w = display_frame.shape[:2]
 
-        centroids = []
-        M = np.zeros((grid_rows, grid_cols), dtype=np.float64)
-
-        # 1. Base Tracking & Data Population
+        # Density grid, rank-1 SVD core and the K_n mesh (see topography.py).
+        points = topography.centroids(latest_boxes)
         for (x1, y1, x2, y2) in latest_boxes:
             cv2.rectangle(display_frame, (x1, y1), (x2, y2), (0, 255, 0), 1)
-            cx, cy = int((x1 + x2) / 2), int((y1 + y2) / 2)
-            centroids.append((cx, cy))
-            
-            gx = min(int((cx / frame_w) * grid_cols), grid_cols - 1)
-            gy = min(int((cy / frame_h) * grid_rows), grid_rows - 1)
-            M[gy, gx] += 1
-
-        anomalies_detected = 0
-        network_connections = 0
+        M = topography.density_grid(points, frame_w, frame_h, grid_cols, grid_rows)
 
         # --- THE FULLY CONNECTED MESH MATH ---
-        for p1, p2 in itertools.combinations(centroids, 2):
-            network_connections += 1 
-            
+        edges = topography.mesh_edges(points)
+        network_connections = len(edges)
+        for p1, p2 in edges:
             # Draw the connecting line automatically (No distance check!)
-            cv2.line(display_frame, p1, p2, (0, 255, 255), 1) 
+            cv2.line(display_frame, p1, p2, (0, 255, 255), 1)
             cv2.circle(display_frame, p1, 4, (0, 255, 255), -1)
             cv2.circle(display_frame, p2, 4, (0, 255, 255), -1)
 
         # --- THE SVD TOPOGRAPHY MATH ---
-        if np.sum(M) > 1: 
-            U, S, Vh = np.linalg.svd(M, full_matrices=False)
-            M_core = np.abs(S[0] * np.outer(U[:, 0], Vh[0, :]))
-            max_core = np.max(M_core) if np.max(M_core) > 0 else 1
-            
-            for row in range(grid_rows):
-                for col in range(grid_cols):
-                    if M[row, col] > 0: 
-                        px1 = int((col / grid_cols) * frame_w)
-                        py1 = int((row / grid_rows) * frame_h)
-                        px2 = int(((col + 1) / grid_cols) * frame_w)
-                        py2 = int(((row + 1) / grid_rows) * frame_h)
-
-                        if M_core[row, col] > (0.2 * max_core):
-                            cv2.rectangle(display_frame, (px1, py1), (px2, py2), (255, 200, 0), 2) 
-                        else:
-                            anomalies_detected += 1
-                            cv2.rectangle(display_frame, (px1, py1), (px2, py2), (0, 0, 255), 3) 
-                            cv2.line(display_frame, (px1, py1), (px2, py2), (0, 0, 255), 1)
-                            cv2.line(display_frame, (px2, py1), (px1, py2), (0, 0, 255), 1)
-                            cv2.putText(display_frame, "ANOMALY", (px1, py1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+        core_cells, anomaly_cells = topography.classify_cells(M)
+        anomalies_detected = len(anomaly_cells)
+        for kind, cells in (("core", core_cells), ("anomaly", anomaly_cells)):
+            for row, col in cells:
+                px1 = int((col / grid_cols) * frame_w)
+                py1 = int((row / grid_rows) * frame_h)
+                px2 = int(((col + 1) / grid_cols) * frame_w)
+                py2 = int(((row + 1) / grid_rows) * frame_h)
+                if kind == "core":
+                    cv2.rectangle(display_frame, (px1, py1), (px2, py2), (255, 200, 0), 2)
+                else:
+                    cv2.rectangle(display_frame, (px1, py1), (px2, py2), (0, 0, 255), 3)
+                    cv2.line(display_frame, (px1, py1), (px2, py2), (0, 0, 255), 1)
+                    cv2.line(display_frame, (px2, py1), (px1, py2), (0, 0, 255), 1)
+                    cv2.putText(display_frame, "ANOMALY", (px1, py1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
         # Dynamic UI Update Panel
         panel_height = 110 if (anomalies_detected > 0 or network_connections > 0) else 50
