@@ -224,8 +224,11 @@ def live_camera():
         for p1, p2 in edges:
             # Draw the connecting line automatically (No distance check!)
             cv2.line(display_frame, p1, p2, (0, 255, 255), 1)
-            cv2.circle(display_frame, p1, 4, (0, 255, 255), -1)
-            cv2.circle(display_frame, p2, 4, (0, 255, 255), -1)
+        # One dot per person, drawn over the lines. (Dots used to be drawn for both ends of
+        # every edge: n(n-1) circles, about 10,000 a frame for 100 people, and none at all
+        # for a single person.)
+        for p in points:
+            cv2.circle(display_frame, p, 4, (0, 255, 255), -1)
 
         # --- THE SVD TOPOGRAPHY MATH ---
         core_cells, anomaly_cells = topography.classify_cells(M)
