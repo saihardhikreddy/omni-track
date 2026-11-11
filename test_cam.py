@@ -8,6 +8,19 @@ def camera_backend(platform=None):
     platform = sys.platform if platform is None else platform
     return cv2.CAP_DSHOW if platform.startswith("win") else cv2.CAP_ANY
 
+WINDOW = "Hardware Diagnostic"
+
+
+def window_closed(name):
+    """True once the window has been closed with its X button.
+
+    waitKey() never sees a key after that, and the next imshow() opens the window
+    again, so without this check the feed could only be stopped with Ctrl+C."""
+    try:
+        return cv2.getWindowProperty(name, cv2.WND_PROP_VISIBLE) < 1
+    except cv2.error:  # some backends raise once the window is gone
+        return True
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Omni-Track Camera Probe Diagnostic Utility")
     parser.add_argument("--camera", "-c", type=int, default=None, help="Explicit camera index to test (e.g. 0, 1, 2)")
@@ -49,6 +62,8 @@ def main():
             else:
                 print(f"[WARNING] Index {idx} opened, but no video data is streaming.")
                 temp_cap.release()
+        else:
+            temp_cap.release()
 
     if not cap or not cap.isOpened():
         print("[ERROR] ❌ No working camera stream detected.")
@@ -61,7 +76,7 @@ def main():
     actual_w = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
     actual_h = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
     print(f"[SYSTEM] Stream initialized at: {int(actual_w)}x{int(actual_h)}")
-    print("[SYSTEM] 🟢 FEED ACTIVE. Press 'q' on the video window to close.")
+    print("[SYSTEM] 🟢 FEED ACTIVE. Press 'q' or Esc, or close the video window, to stop.")
 
     while True:
         ret, frame = cap.read()
@@ -72,8 +87,10 @@ def main():
         cv2.putText(frame, f"CAMERA ACTIVE | INDEX: {working_index}", (10, 30), 
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
         
-        cv2.imshow("Hardware Diagnostic", frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        cv2.imshow(WINDOW, frame)
+        if cv2.waitKey(1) & 0xFF in (ord('q'), 27):
+            break
+        if window_closed(WINDOW):
             break
 
     cap.release()

@@ -84,3 +84,4 @@ Test connected video feeds and camera indices:
 ```bash
 python test_cam.py --camera 0
 ```
+Without `--camera` it tries indices 0 to 3 and uses the first that streams. Stop the feed with `q`, Esc or the window's close button. The exit code is 1 when no camera works, so scripts can check it.
