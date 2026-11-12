@@ -27,7 +27,7 @@ from ultralytics import YOLO
 from sahi import AutoDetectionModel
 from sahi.predict import get_sliced_prediction
 
-from test_cam import camera_backend
+from test_cam import camera_backend, window_closed
 import topography
 
 def print_banner():
@@ -142,15 +142,22 @@ def analyze_image():
 # ==========================================
 # 🎥 MODE 2: LIVE CAMERA (OMNI-TRACK)
 # ==========================================
+LIVE_WINDOW = "Omni-Track Command Center"
 latest_frame = None
+latest_frame_id = 0     # bumped for every new camera frame
 latest_boxes = []
 latest_total = 0
 is_running = True
 
 def fast_ai_thread():
     global latest_frame, latest_boxes, latest_total, is_running
+    done_id = 0
     while is_running:
-        if latest_frame is not None:
+        # Track each camera frame once. The loop used to run the model again and again on the
+        # same frame whenever it was faster than the camera, which kept the GPU busy for
+        # nothing and fed ByteTrack repeated frames as if time had moved on.
+        if latest_frame is not None and latest_frame_id != done_id:
+            done_id = latest_frame_id
             frame_to_process = latest_frame.copy()
             results = fast_model.track(
                 frame_to_process, conf=0.35, imgsz=1024, classes=[0], 
@@ -169,7 +176,7 @@ def fast_ai_thread():
             time.sleep(0.01)
 
 def live_camera():
-    global latest_frame, latest_boxes, latest_total, is_running
+    global latest_frame, latest_frame_id, latest_boxes, latest_total, is_running
     is_running = True
     
     print("\n[SYSTEM] Booting Omni-Track (SVD Topography + Network Graph)...")
@@ -198,7 +205,7 @@ def live_camera():
     # Mathematical Constants
     grid_cols, grid_rows = topography.GRID_COLS, topography.GRID_ROWS
 
-    print("[SYSTEM] 🟢 LIVE TRACKING ACTIVE. Press 'q' on the video window to quit.")
+    print("[SYSTEM] 🟢 LIVE TRACKING ACTIVE. Press 'q' or Esc, or close the video window, to quit.")
 
     while True:
         ret, frame = cap.read()
@@ -208,6 +215,7 @@ def live_camera():
         
         frame = cv2.flip(frame, 1) 
         latest_frame = frame.copy() 
+        latest_frame_id += 1
         display_frame = frame.copy()
         
         frame_h, frame_w = display_frame.shape[:2]
@@ -260,9 +268,10 @@ def live_camera():
         if network_connections > 0:
             cv2.putText(display_frame, f"NETWORK CONNECTIONS: {network_connections}", (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
 
-        cv2.imshow("Omni-Track Command Center", display_frame)
+        cv2.imshow(LIVE_WINDOW, display_frame)
         
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        # q or Esc, or the window's close button (otherwise imshow just reopens it).
+        if cv2.waitKey(1) & 0xFF in (ord('q'), 27) or window_closed(LIVE_WINDOW):
             is_running = False
             break
 

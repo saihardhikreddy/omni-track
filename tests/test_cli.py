@@ -128,3 +128,50 @@ def test_feed_stops_on_escape():
             patch.object(test_cam.cv2, "getWindowProperty", return_value=1.0):
         assert test_cam.main() == 0
     assert cam.frames == 2
+
+
+def _live_functions():
+    """fast_ai_thread from app.py, run against a fake model (app.py loads YOLO on import)."""
+    import ast
+    import types
+
+    source = (REPO_ROOT / "app.py").read_text(encoding="utf-8")
+    tree = ast.parse(source)
+    wanted = [n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "fast_ai_thread"]
+    module = types.ModuleType("live")
+    module.time = __import__("time")
+    exec(compile(ast.Module(body=wanted, type_ignores=[]), "app.py", "exec"), module.__dict__)
+    return module
+
+
+def test_ai_thread_tracks_each_frame_once():
+    import threading
+    import time
+
+    import numpy as np
+
+    live = _live_functions()
+    calls = []
+
+    class FakeModel:
+        def track(self, frame, **kw):
+            calls.append(int(frame[0, 0, 0]))
+            return [type("R", (), {"boxes": None})()]
+
+    live.fast_model = FakeModel()
+    live.is_running = True
+    live.latest_frame, live.latest_frame_id = np.full((4, 4, 3), 1, np.uint8), 1
+    t = threading.Thread(target=live.fast_ai_thread, daemon=True)
+    t.start()
+    time.sleep(0.2)
+    assert calls == [1]  # the same frame is not tracked over and over
+    live.latest_frame, live.latest_frame_id = np.full((4, 4, 3), 2, np.uint8), 2
+    time.sleep(0.2)
+    live.is_running = False
+    t.join(timeout=1)
+    assert calls == [1, 2]
+
+
+def test_live_window_can_be_closed():
+    source = (REPO_ROOT / "app.py").read_text(encoding="utf-8")
+    assert "window_closed(LIVE_WINDOW)" in source
