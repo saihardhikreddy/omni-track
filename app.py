@@ -243,17 +243,14 @@ def live_camera():
         anomalies_detected = len(anomaly_cells)
         for kind, cells in (("core", core_cells), ("anomaly", anomaly_cells)):
             for row, col in cells:
-                px1 = int((col / grid_cols) * frame_w)
-                py1 = int((row / grid_rows) * frame_h)
-                px2 = int(((col + 1) / grid_cols) * frame_w)
-                py2 = int(((row + 1) / grid_rows) * frame_h)
+                px1, py1, px2, py2 = topography.cell_rect(row, col, frame_w, frame_h, grid_cols, grid_rows)
                 if kind == "core":
                     cv2.rectangle(display_frame, (px1, py1), (px2, py2), (255, 200, 0), 2)
                 else:
                     cv2.rectangle(display_frame, (px1, py1), (px2, py2), (0, 0, 255), 3)
                     cv2.line(display_frame, (px1, py1), (px2, py2), (0, 0, 255), 1)
                     cv2.line(display_frame, (px2, py1), (px1, py2), (0, 0, 255), 1)
-                    cv2.putText(display_frame, "ANOMALY", (px1, py1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+                    cv2.putText(display_frame, "ANOMALY", topography.label_origin((px1, py1, px2, py2)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
         # Dynamic UI Update Panel
         panel_height = 110 if (anomalies_detected > 0 or network_connections > 0) else 50

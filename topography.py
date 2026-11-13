@@ -50,6 +50,20 @@ def classify_cells(M, core_fraction=CORE_FRACTION):
     return core, anomalies
 
 
+def cell_rect(row, col, frame_w, frame_h, cols=GRID_COLS, rows=GRID_ROWS):
+    """Pixel corners (x1, y1, x2, y2) of grid cell (row, col) on a frame_w x frame_h frame."""
+    return (int(col / cols * frame_w), int(row / rows * frame_h),
+            int((col + 1) / cols * frame_w), int((row + 1) / rows * frame_h))
+
+
+def label_origin(rect, text_h=12, gap=5):
+    """Where to write a cell's label: just above the cell, or just inside its top edge when
+    the cell touches the top of the frame and there is no room above (text drawn at a
+    negative y is simply lost)."""
+    x1, y1 = rect[0], rect[1]
+    return (x1, y1 - gap) if y1 - gap - text_h >= 0 else (x1 + 3, y1 + text_h + gap)
+
+
 def mesh_edges(points):
     """Every pair of points: the fully connected K_n graph drawn between people."""
     return list(itertools.combinations(points, 2))

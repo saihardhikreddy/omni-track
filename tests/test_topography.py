@@ -40,3 +40,17 @@ def test_mesh_is_fully_connected():
     pts = [(0, 0), (1, 1), (2, 2), (3, 3)]
     assert len(tp.mesh_edges(pts)) == 6
     assert tp.mesh_edges(pts[:1]) == []
+
+
+def test_cell_rect_tiles_the_frame():
+    assert tp.cell_rect(0, 0, 1280, 720) == (0, 0, 40, 40)
+    assert tp.cell_rect(17, 31, 1280, 720) == (1240, 680, 1280, 720)
+    assert tp.cell_rect(1, 2, 1280, 720)[:2] == tp.cell_rect(0, 1, 1280, 720)[2:]
+
+
+def test_label_stays_on_screen_for_the_top_row():
+    # Cells in the top row used to get their label at y = -5, off the frame.
+    x, y = tp.label_origin(tp.cell_rect(0, 5, 1280, 720))
+    assert y > 0 and x >= 200
+    # Lower cells keep the label just above the cell.
+    assert tp.label_origin(tp.cell_rect(4, 5, 1280, 720)) == (200, 155)
