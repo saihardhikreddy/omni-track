@@ -29,6 +29,7 @@ from sahi.predict import get_sliced_prediction
 
 from test_cam import camera_backend, window_closed
 import topography
+from imagefile import clean_dropped_path, read_image, write_image
 
 def print_banner():
     print("""
@@ -86,7 +87,7 @@ def analyze_image():
     print("="*40)
     print("[TIP] Drag and drop your image file directly into this terminal!")
     
-    file_path = input("\nImage Path: ").strip(' "\'')
+    file_path = clean_dropped_path(input("\nImage Path: "))
     
     if not file_path:
         print("[ERROR] No path provided.")
@@ -94,7 +95,7 @@ def analyze_image():
 
     print(f"\n[SYSTEM] Executing Deep-Slice SAHI Analysis on {file_path}...")
     
-    img = cv2.imread(file_path)
+    img = read_image(file_path)
     if img is None: 
         print("[ERROR] Could not read the image. Check the file path.")
         return
@@ -127,8 +128,10 @@ def analyze_image():
     print("!"*40)
     
     output_filename = "scan_result.jpg"
-    cv2.imwrite(output_filename, img)
-    print(f"\n[SUCCESS] Tactical image saved to your folder as '{output_filename}'")
+    if write_image(output_filename, img):
+        print(f"\n[SUCCESS] Tactical image saved to your folder as '{output_filename}'")
+    else:
+        print(f"\n[WARNING] Could not save '{output_filename}' in this folder.")
     
     # Attempt to show window, gracefully fail if Windows blocks it
     try:

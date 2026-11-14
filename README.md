@@ -72,6 +72,7 @@ Launch live webcam processing with SVD crowd topography overlays:
 ```bash
 python app.py
 ```
+Option 1 in its menu scans a single photo: type or drag in its path (quotes and PowerShell's `& ` are fine, and so are folder names outside English) and the marked-up result is saved as `scan_result.jpg`.
 
 ### 2. Run Static High-Resolution SAHI Analysis (`stadium_elite.py`)
 Run sliced hyper-inference on high-density crowd photos:
