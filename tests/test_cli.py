@@ -175,3 +175,35 @@ def test_ai_thread_tracks_each_frame_once():
 def test_live_window_can_be_closed():
     source = (REPO_ROOT / "app.py").read_text(encoding="utf-8")
     assert "window_closed(LIVE_WINDOW)" in source
+
+
+class _SilentCamera(_DeadCamera):
+    """Opens, but never delivers a frame (an idle virtual camera)."""
+
+    def isOpened(self):
+        return True
+
+    def read(self):
+        return False, None
+
+
+def test_a_camera_that_opens_but_streams_nothing_is_skipped():
+    made = {}
+
+    def make(idx, _backend):
+        made[idx] = _SilentCamera() if idx == 1 else _LiveCamera() if idx == 0 else _DeadCamera()
+        return made[idx]
+
+    with patch.object(test_cam.cv2, "VideoCapture", make):
+        cap, idx = test_cam.open_first_working([1, 2, 3, 0], log=lambda _m: None)
+    assert idx == 0 and cap is made[0]
+    assert made[1].released and made[2].released and made[3].released
+    assert not made[0].released
+
+    with patch.object(test_cam.cv2, "VideoCapture", lambda *_: _SilentCamera()):
+        assert test_cam.open_first_working([0, 1], log=lambda _m: None) == (None, -1)
+
+
+def test_live_mode_uses_the_frame_checking_probe():
+    source = (REPO_ROOT / "app.py").read_text(encoding="utf-8")
+    assert "open_first_working([1, 2, 3, 0]" in source

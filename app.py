@@ -27,7 +27,7 @@ from ultralytics import YOLO
 from sahi import AutoDetectionModel
 from sahi.predict import get_sliced_prediction
 
-from test_cam import camera_backend, window_closed
+from test_cam import camera_backend, open_first_working, window_closed
 import topography
 from imagefile import clean_dropped_path, read_image, write_image
 
@@ -186,15 +186,10 @@ def live_camera():
     ai_thread = threading.Thread(target=fast_ai_thread, daemon=True)
     ai_thread.start()
 
-    cap = None
-    # Hunts for external/virtual cameras first, falls back to laptop cam.
-    # DirectShow exists only on Windows, so Linux and macOS use OpenCV's default.
-    for idx in [1, 2, 3, 0]:
-        temp_cap = cv2.VideoCapture(idx, camera_backend())
-        if temp_cap.isOpened():
-            cap = temp_cap
-            break
-        temp_cap.release()
+    # Hunts for external/virtual cameras first, falls back to laptop cam. Only a camera that
+    # actually delivers a frame counts: an idle virtual camera opens fine but streams nothing,
+    # and used to be picked over a working webcam, ending live mode at once.
+    cap, _ = open_first_working([1, 2, 3, 0], camera_backend(), log=lambda _msg: None)
 
     if not cap or not cap.isOpened(): 
         print("[ERROR] No camera found.")

@@ -21,6 +21,24 @@ def window_closed(name):
     except cv2.error:  # some backends raise once the window is gone
         return True
 
+def open_first_working(indices, backend=None, log=print):
+    """(capture, index) for the first camera in indices that opens AND delivers a frame, or
+    (None, -1). A camera that opens but streams nothing (OBS's virtual camera before
+    "Start Virtual Camera", a webcam held by another app) is released and skipped."""
+    backend = camera_backend() if backend is None else backend
+    for idx in indices:
+        log(f"[*] Probing index {idx}...")
+        cap = cv2.VideoCapture(idx, backend)
+        if cap.isOpened():
+            ok, _ = cap.read()
+            if ok:
+                log(f"[SUCCESS] Live camera locked on index {idx}!\n")
+                return cap, idx
+            log(f"[WARNING] Index {idx} opened, but no video data is streaming.")
+        cap.release()
+    return None, -1
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Omni-Track Camera Probe Diagnostic Utility")
     parser.add_argument("--camera", "-c", type=int, default=None, help="Explicit camera index to test (e.g. 0, 1, 2)")
@@ -37,10 +55,6 @@ def main():
 =========================================================
 """)
 
-    cap = None
-    working_index = -1
-    backend = camera_backend()
-
     if args.camera is not None:
         probe_indices = [args.camera]
         print(f"[SYSTEM] Probing user-specified camera index {args.camera}...")
@@ -48,22 +62,7 @@ def main():
         probe_indices = [0, 1, 2, 3]
         print("[SYSTEM] Probing available camera feeds (indices 0, 1, 2, 3)...")
 
-    for idx in probe_indices:
-        print(f"[*] Probing index {idx}...")
-        temp_cap = cv2.VideoCapture(idx, backend)
-        
-        if temp_cap.isOpened():
-            ret, frame = temp_cap.read()
-            if ret:
-                cap = temp_cap
-                working_index = idx
-                print(f"[SUCCESS] Live camera locked on index {idx}!\n")
-                break
-            else:
-                print(f"[WARNING] Index {idx} opened, but no video data is streaming.")
-                temp_cap.release()
-        else:
-            temp_cap.release()
+    cap, working_index = open_first_working(probe_indices)
 
     if not cap or not cap.isOpened():
         print("[ERROR] ❌ No working camera stream detected.")
