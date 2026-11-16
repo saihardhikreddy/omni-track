@@ -181,6 +181,10 @@ def fast_ai_thread():
 def live_camera():
     global latest_frame, latest_frame_id, latest_boxes, latest_total, is_running
     is_running = True
+    # Start from an empty scene. The boxes from the last session used to stay until the model
+    # finished its first new frame, so a second session opened with the old people's boxes,
+    # mesh and LIVE COUNT drawn over the new picture.
+    latest_boxes, latest_total = [], 0
     
     print("\n[SYSTEM] Booting Omni-Track (SVD Topography + Network Graph)...")
     ai_thread = threading.Thread(target=fast_ai_thread, daemon=True)
