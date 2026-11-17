@@ -31,11 +31,17 @@ def density_grid(points, frame_w, frame_h, cols=GRID_COLS, rows=GRID_ROWS):
 
 
 def rank1_core(M):
-    """|rank-1 SVD approximation| of M (all zeros when M has fewer than two people)."""
+    """|rank-1 SVD approximation| of M (all zeros when M has fewer than two people).
+
+    When the largest singular value is shared (two separate groups of the same size, say),
+    there is no single dominant pattern and the SVD returns one of them at random; the other
+    group then looked unexplained and was flagged as an anomaly. Every component tied for
+    first place is kept instead, so equal groups are all core."""
     if np.sum(M) <= 1:
         return np.zeros_like(M)
     U, S, Vh = np.linalg.svd(M, full_matrices=False)
-    return np.abs(S[0] * np.outer(U[:, 0], Vh[0, :]))
+    tied = [k for k in range(len(S)) if S[k] >= S[0] * (1 - 1e-9)]
+    return sum(np.abs(S[k] * np.outer(U[:, k], Vh[k, :])) for k in tied)
 
 
 def classify_cells(M, core_fraction=CORE_FRACTION):

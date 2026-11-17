@@ -5,6 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import numpy as np  # noqa: E402
 import topography as tp  # noqa: E402
 
 
@@ -29,6 +30,21 @@ def test_isolated_group_is_an_anomaly():
     core, anomalies = tp.classify_cells(M)
     assert anomalies == [(int(1000 / cell_h), int(1800 / cell_w))]
     assert sorted(core) == [(r, c) for r in range(2, 5) for c in range(2, 6)]
+
+
+def test_two_equal_groups_are_both_core():
+    # Two separate groups of the same size: neither is "the" crowd, so neither is an anomaly.
+    # The SVD used to pick one at random and flag the other.
+    M = np.zeros((tp.GRID_ROWS, tp.GRID_COLS))
+    M[2, 3] = M[2, 4] = 3
+    M[10, 20] = M[10, 21] = 3
+    core, anomalies = tp.classify_cells(M)
+    assert anomalies == []
+    assert sorted(core) == [(2, 3), (2, 4), (10, 20), (10, 21)]
+    # A smaller group is still an anomaly.
+    M[10, 21] = 0
+    M[10, 20] = 1
+    assert tp.classify_cells(M)[1] == [(10, 20)]
 
 
 def test_one_person_or_nobody_has_no_topography():
