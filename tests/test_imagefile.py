@@ -19,6 +19,13 @@ def test_dropped_paths_lose_quotes_and_the_powershell_ampersand():
     assert clean_dropped_path("   ") == ""
 
 
+def test_dragged_paths_from_macos_and_linux_lose_their_escapes():
+    dragged = "/Users/me/My\\ Photos/crowd\\ \\(1\\).jpg "
+    assert clean_dropped_path(dragged, windows=False) == "/Users/me/My Photos/crowd (1).jpg"
+    assert clean_dropped_path("'/home/me/a\\b.jpg'", windows=False) == "/home/me/a\\b.jpg"  # quoted: as is
+    assert clean_dropped_path("C:\\Photos\\crowd.jpg", windows=True) == "C:\\Photos\\crowd.jpg"
+
+
 def test_round_trip_through_a_non_ascii_folder(tmp_path):
     folder = tmp_path / "స్టేడియం İzmir"
     folder.mkdir()

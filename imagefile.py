@@ -8,18 +8,28 @@ memory works for any path.
 """
 
 import os
+import re
 
 import cv2
 import numpy as np
 
 
-def clean_dropped_path(text):
+def clean_dropped_path(text, windows=None):
     """The path as typed or dragged into the terminal: surrounding spaces and quotes removed,
-    and the "& " that PowerShell puts in front of a dragged-in quoted path."""
+    and the "& " that PowerShell puts in front of a dragged-in quoted path.
+
+    On macOS and Linux a dragged-in path comes unquoted with its spaces and brackets escaped
+    ("/Users/me/My\\ Photos/crowd\\ (1).jpg"); those backslashes are removed too, or the file
+    was "not found". Windows paths keep their backslashes: there they separate folders."""
+    windows = os.name == "nt" if windows is None else windows
     text = text.strip()
     if text.startswith("& "):
         text = text[2:].lstrip()
-    return text.strip(" \"'")
+    quoted = text[:1] in ("'", '"')
+    text = text.strip(" \"'")
+    if not windows and not quoted:
+        text = re.sub(r"\\(.)", r"\1", text)
+    return text
 
 
 def read_image(path):
