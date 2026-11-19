@@ -29,7 +29,7 @@ from sahi.predict import get_sliced_prediction
 
 from test_cam import camera_backend, open_first_working, window_closed
 import topography
-from imagefile import clean_dropped_path, read_image, write_image
+from imagefile import clean_dropped_path, read_image, to_rgb, write_image
 
 def print_banner():
     print("""
@@ -101,7 +101,7 @@ def analyze_image():
         return
 
     result = get_sliced_prediction(
-        image=img, detection_model=sahi_model, slice_height=512, slice_width=512,
+        image=to_rgb(img), detection_model=sahi_model, slice_height=512, slice_width=512,
         overlap_height_ratio=0.35, overlap_width_ratio=0.35, perform_standard_pred=True,    
         postprocess_type="NMS", postprocess_match_threshold=0.3 
     )

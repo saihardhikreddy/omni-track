@@ -43,6 +43,14 @@ def read_image(path):
     return cv2.imdecode(data, cv2.IMREAD_COLOR)
 
 
+def to_rgb(image):
+    """The BGR array read_image gives, in the RGB order SAHI expects of a numpy image.
+
+    SAHI takes an HxWx3 array as RGB and flips it to BGR for YOLO itself, so handing it
+    OpenCV's BGR directly ran the static scan on an image with red and blue swapped."""
+    return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+
 def write_image(path, image):
     """Save image to path in the format its extension names. Returns False if that failed."""
     ext = os.path.splitext(str(path))[1] or ".jpg"

@@ -9,7 +9,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from imagefile import clean_dropped_path, read_image, write_image  # noqa: E402
+from imagefile import clean_dropped_path, read_image, to_rgb, write_image  # noqa: E402
 
 
 def test_dropped_paths_lose_quotes_and_the_powershell_ampersand():
@@ -54,3 +54,12 @@ def test_write_reports_failure(tmp_path):
     assert not write_image(str(tmp_path / "missing-folder" / "out.jpg"), image)
     assert write_image(str(tmp_path / "out"), image)  # no extension: saved as JPEG
     assert read_image(str(tmp_path / "out")) is not None
+
+
+def test_images_go_to_sahi_in_rgb_order(tmp_path):
+    bgr = np.zeros((4, 4, 3), np.uint8)
+    bgr[..., 0] = 255                      # pure blue, as OpenCV stores it
+    path = tmp_path / "blue.png"
+    assert write_image(path, bgr)
+    rgb = to_rgb(read_image(str(path)))
+    assert rgb[0, 0].tolist() == [0, 0, 255]   # blue is the last channel in RGB
