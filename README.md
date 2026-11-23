@@ -80,9 +80,20 @@ Run sliced hyper-inference on high-density crowd photos:
 python stadium_elite.py --image stadium_crowd.jpg --model yolov8l.pt --device cpu
 ```
 
+| Option | Default | What it does |
+| --- | --- | --- |
+| `--image`, `-i` | `stadium_crowd.jpg` | Crowd photo to scan |
+| `--model`, `-m` | `yolov8l.pt` | YOLOv8 weights, a path or a name such as `yolov8n.pt` |
+| `--device`, `-d` | `cpu` | `cpu`, or a GPU such as `cuda:0` |
+| `--conf` | `0.15` | Detection confidence threshold, 0 to 1. Lower finds more distant people and more false hits |
+| `--slice-size` | `400` | SAHI tile size in pixels (at least 32). Smaller tiles help with tiny, far-away people but take longer |
+| `--out-dir` | `.` | Folder for the marked-up result, `elite_prediction_final.png` (created if missing) |
+
 ### 3. Hardware Camera Diagnostic Tool (`test_cam.py`)
 Test connected video feeds and camera indices:
 ```bash
 python test_cam.py --camera 0
 ```
+
+`--width` and `--height` (default 1920 x 1080) set the resolution to ask the camera for.
 Without `--camera` it tries indices 0 to 3 and uses the first that streams. Stop the feed with `q`, Esc or the window's close button. The exit code is 1 when no camera works, so scripts can check it.

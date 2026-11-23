@@ -207,3 +207,15 @@ def test_a_camera_that_opens_but_streams_nothing_is_skipped():
 def test_live_mode_uses_the_frame_checking_probe():
     source = (REPO_ROOT / "app.py").read_text(encoding="utf-8")
     assert "open_first_working([1, 2, 3, 0]" in source
+
+
+def test_readme_documents_every_option():
+    """Every command-line option of the two scripts appears in the README."""
+    import re
+
+    readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    sources = [(REPO_ROOT / name).read_text(encoding="utf-8") for name in ("stadium_elite.py", "test_cam.py")]
+    options = {opt for src in sources for opt in re.findall(r'add_argument\(\s*"(--[\w-]+)"', src)}
+    assert options, "no options found"
+    missing = sorted(opt for opt in options if f"`{opt}`" not in readme)
+    assert not missing, f"options missing from the README: {missing}"
