@@ -52,9 +52,15 @@ def to_rgb(image):
 
 
 def write_image(path, image):
-    """Save image to path in the format its extension names. Returns False if that failed."""
+    """Save image to path in the format its extension names. Returns False if that failed.
+
+    An extension OpenCV has no encoder for (".txt", ".heic", a typo) made cv2.imencode raise
+    cv2.error instead of returning False, so the caller's "could not save" branch never ran."""
     ext = os.path.splitext(str(path))[1] or ".jpg"
-    ok, encoded = cv2.imencode(ext, image)
+    try:
+        ok, encoded = cv2.imencode(ext, image)
+    except cv2.error:
+        return False
     if not ok:
         return False
     try:

@@ -56,6 +56,13 @@ def test_write_reports_failure(tmp_path):
     assert read_image(str(tmp_path / "out")) is not None
 
 
+def test_write_to_an_unknown_extension_reports_failure_instead_of_raising(tmp_path):
+    image = np.zeros((4, 4, 3), dtype=np.uint8)
+    target = tmp_path / "scan_result.txt"
+    assert write_image(str(target), image) is False
+    assert not target.exists()
+
+
 def test_images_go_to_sahi_in_rgb_order(tmp_path):
     bgr = np.zeros((4, 4, 3), np.uint8)
     bgr[..., 0] = 255                      # pure blue, as OpenCV stores it
