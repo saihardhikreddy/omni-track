@@ -252,7 +252,9 @@ def live_camera():
                     cv2.rectangle(display_frame, (px1, py1), (px2, py2), (0, 0, 255), 3)
                     cv2.line(display_frame, (px1, py1), (px2, py2), (0, 0, 255), 1)
                     cv2.line(display_frame, (px2, py1), (px1, py2), (0, 0, 255), 1)
-                    cv2.putText(display_frame, "ANOMALY", topography.label_origin((px1, py1, px2, py2)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+                    (label_w, _), _ = cv2.getTextSize("ANOMALY", cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)
+                    origin = topography.label_origin((px1, py1, px2, py2), text_w=label_w, frame_w=frame_w)
+                    cv2.putText(display_frame, "ANOMALY", origin, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
         # Dynamic UI Update Panel
         panel_height = 110 if (anomalies_detected > 0 or network_connections > 0) else 50

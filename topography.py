@@ -62,12 +62,19 @@ def cell_rect(row, col, frame_w, frame_h, cols=GRID_COLS, rows=GRID_ROWS):
             int((col + 1) / cols * frame_w), int((row + 1) / rows * frame_h))
 
 
-def label_origin(rect, text_h=12, gap=5):
+def label_origin(rect, text_h=12, gap=5, text_w=0, frame_w=None):
     """Where to write a cell's label: just above the cell, or just inside its top edge when
     the cell touches the top of the frame and there is no room above (text drawn at a
-    negative y is simply lost)."""
+    negative y is simply lost).
+
+    With the label's width and the frame's width, a label that would run past the right edge
+    (the last columns of a 640-pixel frame are 20 px wide, "ANOMALY" is 74 px) is moved left
+    so it ends at the edge."""
     x1, y1 = rect[0], rect[1]
-    return (x1, y1 - gap) if y1 - gap - text_h >= 0 else (x1 + 3, y1 + text_h + gap)
+    x, y = (x1, y1 - gap) if y1 - gap - text_h >= 0 else (x1 + 3, y1 + text_h + gap)
+    if frame_w is not None and x + text_w > frame_w:
+        x = max(0, frame_w - text_w)
+    return x, y
 
 
 def mesh_edges(points):

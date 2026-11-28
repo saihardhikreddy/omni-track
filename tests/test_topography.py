@@ -70,3 +70,15 @@ def test_label_stays_on_screen_for_the_top_row():
     assert y > 0 and x >= 200
     # Lower cells keep the label just above the cell.
     assert tp.label_origin(tp.cell_rect(4, 5, 1280, 720)) == (200, 155)
+
+
+def test_label_stays_on_screen_for_the_last_columns():
+    # "ANOMALY" is 74 px wide; on a 640 px frame the last columns are 20 px wide, so a label
+    # starting at the cell ran off the right edge.
+    x, y = tp.label_origin(tp.cell_rect(4, 31, 640, 360), text_w=74, frame_w=640)
+    assert x + 74 <= 640 and y == tp.label_origin(tp.cell_rect(4, 31, 640, 360))[1]
+    x, _ = tp.label_origin(tp.cell_rect(0, 31, 640, 360), text_w=74, frame_w=640)  # top-right corner
+    assert x + 74 <= 640
+    # Labels that fit keep their place, and a frame narrower than the label starts it at 0.
+    assert tp.label_origin(tp.cell_rect(4, 5, 1280, 720), text_w=74, frame_w=1280) == (200, 155)
+    assert tp.label_origin((10, 100, 20, 110), text_w=74, frame_w=50)[0] == 0
